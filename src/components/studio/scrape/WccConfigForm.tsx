@@ -68,7 +68,7 @@ function Toggle({
         <div className="text-[13px] font-medium">{label}</div>
         {hint ? <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p> : null}
       </div>
-      <Switch checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} />
+      <Switch checked={checked} onCheckedChange={onCheckedChange} disabled={!!disabled} />
     </div>
   );
 }
@@ -93,7 +93,7 @@ export function WccConfigForm({
         <Textarea
           value={startUrlsText}
           onChange={(e) => onStartUrlsChange(e.target.value)}
-          disabled={disabled}
+          disabled={!!disabled}
           rows={7}
           placeholder={"https://example-resort.com\nhttps://competitor.com/morocco/resort-name"}
           className="font-mono text-[12px]"
@@ -106,7 +106,7 @@ export function WccConfigForm({
           <Select
             value={value.crawlerType}
             onValueChange={(v) => patch({ crawlerType: v as WccCrawlerType })}
-            disabled={disabled}
+            disabled={!!disabled}
           >
             <SelectTrigger>
               <SelectValue />
@@ -125,7 +125,7 @@ export function WccConfigForm({
               min={0}
               max={100}
               value={value.maxCrawlDepth}
-              disabled={disabled}
+              disabled={!!disabled}
               onChange={(e) => patch({ maxCrawlDepth: Number(e.target.value) || 0 })}
             />
           </Field>
@@ -134,7 +134,7 @@ export function WccConfigForm({
               type="number"
               min={1}
               value={value.maxCrawlPages}
-              disabled={disabled}
+              disabled={!!disabled}
               onChange={(e) => patch({ maxCrawlPages: Number(e.target.value) || 1 })}
             />
           </Field>
@@ -143,7 +143,7 @@ export function WccConfigForm({
               type="number"
               min={1}
               value={value.maxResults}
-              disabled={disabled}
+              disabled={!!disabled}
               onChange={(e) => patch({ maxResults: Number(e.target.value) || 1 })}
             />
           </Field>
@@ -153,7 +153,7 @@ export function WccConfigForm({
               min={1}
               max={200}
               value={value.maxConcurrency}
-              disabled={disabled}
+              disabled={!!disabled}
               onChange={(e) => patch({ maxConcurrency: Number(e.target.value) || 1 })}
             />
           </Field>
@@ -162,13 +162,13 @@ export function WccConfigForm({
           label="Use Apify Proxy"
           hint="Required for many sites; enabled by default."
           checked={value.proxyConfiguration.useApifyProxy}
-          disabled={disabled}
+          disabled={!!disabled}
           onCheckedChange={(v) => patch({ proxyConfiguration: { useApifyProxy: v } })}
         />
         <Toggle
           label="Respect robots.txt"
           checked={value.respectRobotsTxtFile}
-          disabled={disabled}
+          disabled={!!disabled}
           onCheckedChange={(v) => patch({ respectRobotsTxtFile: v })}
         />
       </section>
@@ -178,7 +178,7 @@ export function WccConfigForm({
         <Field label="Include URL globs" hint="One glob per line — extends crawl beyond start URL subpaths.">
           <Textarea
             value={globsToText(value.includeUrlGlobs)}
-            disabled={disabled}
+            disabled={!!disabled}
             rows={3}
             className="font-mono text-[12px]"
             placeholder="https://www.example.com/blog/**"
@@ -188,7 +188,7 @@ export function WccConfigForm({
         <Field label="Exclude URL globs">
           <Textarea
             value={globsToText(value.excludeUrlGlobs)}
-            disabled={disabled}
+            disabled={!!disabled}
             rows={3}
             className="font-mono text-[12px]"
             placeholder="https://www.example.com/login/**"
@@ -198,13 +198,13 @@ export function WccConfigForm({
         <Toggle
           label="Use sitemaps"
           checked={value.useSitemaps}
-          disabled={disabled}
+          disabled={!!disabled}
           onCheckedChange={(v) => patch({ useSitemaps: v })}
         />
         <Toggle
           label="Use llms.txt"
           checked={value.useLlmsTxt}
-          disabled={disabled}
+          disabled={!!disabled}
           onCheckedChange={(v) => patch({ useLlmsTxt: v })}
         />
         <Field
@@ -213,7 +213,7 @@ export function WccConfigForm({
         >
           <Input
             value={value.onlyCrawlPagesModifiedSince}
-            disabled={disabled}
+            disabled={!!disabled}
             placeholder="2026-01-01"
             onChange={(e) => patch({ onlyCrawlPagesModifiedSince: e.target.value })}
           />
@@ -225,7 +225,7 @@ export function WccConfigForm({
         <Field label="HTML transformer">
           <Select
             value={value.htmlTransformer}
-            disabled={disabled}
+            disabled={!!disabled}
             onValueChange={(v) => patch({ htmlTransformer: v as WccHtmlTransformer })}
           >
             <SelectTrigger>
@@ -244,13 +244,13 @@ export function WccConfigForm({
           label="Save Markdown"
           hint="Stores markdown on each dataset page (recommended)."
           checked={value.saveMarkdown}
-          disabled={disabled}
+          disabled={!!disabled}
           onCheckedChange={(v) => patch({ saveMarkdown: v })}
         />
         <Toggle
           label="Remove cookie warnings"
           checked={value.removeCookieWarnings}
-          disabled={disabled}
+          disabled={!!disabled}
           onCheckedChange={(v) => patch({ removeCookieWarnings: v })}
         />
       </section>
@@ -272,7 +272,7 @@ export function WccConfigForm({
                 type="number"
                 min={0}
                 value={value.initialConcurrency}
-                disabled={disabled}
+                disabled={!!disabled}
                 onChange={(e) => patch({ initialConcurrency: Number(e.target.value) || 0 })}
               />
             </Field>
@@ -281,7 +281,7 @@ export function WccConfigForm({
                 type="number"
                 min={0}
                 value={value.maxRequestRetries}
-                disabled={disabled}
+                disabled={!!disabled}
                 onChange={(e) => patch({ maxRequestRetries: Number(e.target.value) || 0 })}
               />
             </Field>
@@ -290,7 +290,7 @@ export function WccConfigForm({
                 type="number"
                 min={1}
                 value={value.requestTimeoutSecs}
-                disabled={disabled}
+                disabled={!!disabled}
                 onChange={(e) => patch({ requestTimeoutSecs: Number(e.target.value) || 60 })}
               />
             </Field>
@@ -299,7 +299,7 @@ export function WccConfigForm({
                 type="number"
                 min={0}
                 value={value.dynamicContentWaitSecs}
-                disabled={disabled}
+                disabled={!!disabled}
                 onChange={(e) => patch({ dynamicContentWaitSecs: Number(e.target.value) || 0 })}
               />
             </Field>
@@ -308,7 +308,7 @@ export function WccConfigForm({
                 type="number"
                 min={0}
                 value={value.maxScrollHeightPixels}
-                disabled={disabled}
+                disabled={!!disabled}
                 onChange={(e) => patch({ maxScrollHeightPixels: Number(e.target.value) || 0 })}
               />
             </Field>
@@ -317,7 +317,7 @@ export function WccConfigForm({
                 type="number"
                 min={0}
                 value={value.readableTextCharThreshold}
-                disabled={disabled}
+                disabled={!!disabled}
                 onChange={(e) =>
                   patch({ readableTextCharThreshold: Number(e.target.value) || 0 })
                 }
@@ -327,7 +327,7 @@ export function WccConfigForm({
           <Field label="Wait for selector">
             <Input
               value={value.waitForSelector}
-              disabled={disabled}
+              disabled={!!disabled}
               className="font-mono text-[12px]"
               onChange={(e) => patch({ waitForSelector: e.target.value })}
             />
@@ -335,7 +335,7 @@ export function WccConfigForm({
           <Field label="Soft wait for selector">
             <Input
               value={value.softWaitForSelector}
-              disabled={disabled}
+              disabled={!!disabled}
               className="font-mono text-[12px]"
               onChange={(e) => patch({ softWaitForSelector: e.target.value })}
             />
@@ -343,7 +343,7 @@ export function WccConfigForm({
           <Field label="Click elements (CSS)">
             <Input
               value={value.clickElementsCssSelector}
-              disabled={disabled}
+              disabled={!!disabled}
               className="font-mono text-[12px]"
               onChange={(e) => patch({ clickElementsCssSelector: e.target.value })}
             />
@@ -351,7 +351,7 @@ export function WccConfigForm({
           <Field label="Keep elements (CSS)">
             <Input
               value={value.keepElementsCssSelector}
-              disabled={disabled}
+              disabled={!!disabled}
               className="font-mono text-[12px]"
               onChange={(e) => patch({ keepElementsCssSelector: e.target.value })}
             />
@@ -359,7 +359,7 @@ export function WccConfigForm({
           <Field label="Remove elements (CSS)">
             <Textarea
               value={value.removeElementsCssSelector}
-              disabled={disabled}
+              disabled={!!disabled}
               rows={3}
               className="font-mono text-[12px]"
               onChange={(e) => patch({ removeElementsCssSelector: e.target.value })}
@@ -368,31 +368,31 @@ export function WccConfigForm({
           <Toggle
             label="Keep URL fragments"
             checked={value.keepUrlFragments}
-            disabled={disabled}
+            disabled={!!disabled}
             onCheckedChange={(v) => patch({ keepUrlFragments: v })}
           />
           <Toggle
             label="Ignore canonical URL"
             checked={value.ignoreCanonicalUrl}
-            disabled={disabled}
+            disabled={!!disabled}
             onCheckedChange={(v) => patch({ ignoreCanonicalUrl: v })}
           />
           <Toggle
             label="Block media"
             checked={value.blockMedia}
-            disabled={disabled}
+            disabled={!!disabled}
             onCheckedChange={(v) => patch({ blockMedia: v })}
           />
           <Toggle
             label="Expand iframes"
             checked={value.expandIframes}
-            disabled={disabled}
+            disabled={!!disabled}
             onCheckedChange={(v) => patch({ expandIframes: v })}
           />
           <button
             type="button"
             className="text-xs text-muted-foreground hover:text-foreground"
-            disabled={disabled}
+            disabled={!!disabled}
             onClick={() => onChange({ ...DEFAULT_WCC_INPUT })}
           >
             Reset options to defaults

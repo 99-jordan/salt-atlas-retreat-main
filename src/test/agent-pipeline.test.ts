@@ -1,4 +1,6 @@
 import { describe, expect, beforeAll, it, vi } from "vitest";
+import { checkPage, constrainCrawl, safePublicUrl } from "@/lib/crawl-policy";
+import { DEFAULT_WCC_INPUT } from "@/lib/wcc-types";
 import type { Resort, PageSection } from "@/lib/types";
 import {
   blankFacts, mergeVerifiedResearch, applyWrittenSections, applyEditorPatch, discoveredResorts,
@@ -93,5 +95,33 @@ describe("Agent evidence and patch gates", () => {
     expect(output).toHaveLength(1);
     expect(output[0]?.sources).toHaveLength(2);
     expect(output[0]?.identityNote).toContain("Identity review required");
+  });
+});
+
+describe("Deterministic crawler safety policy", () => {
+  it("rejects local/private and non-HTTP source URLs", () => {
+    expect(safePublicUrl("http://localhost/admin")).toBe(false);
+    expect(safePublicUrl("http://127.0.0.1/")).toBe(false);
+    expect(safePublicUrl("http://169.254.169.254/latest")).toBe(false);
+    expect(safePublicUrl("file:///etc/passwd")).toBe(false);
+    expect(safePublicUrl("https://resort.example/surf")).toBe(true);
+  });
+  it("caps broad crawl settings on the server", () => {
+    const input = constrainCrawl({
+      ...DEFAULT_WCC_INPUT, startUrls: [{ url: "https://resort.example/" }],
+      maxCrawlDepth: 90, maxCrawlPages: 999,
+      maxResults: 999, maxConcurrency: 200, initialConcurrency: 80,
+      maxRequestRetries: 5, respectRobotsTxtFile: false, useSitemaps: true,
+    });
+    expect(input.maxCrawlDepth).toBe(3);
+    expect(input.maxCrawlPages).toBe(50);
+    expect(input.maxConcurrency).toBe(2);
+    expect(input.maxRequestRetries).toBe(1);
+    expect(input.respectRobotsTxtFile).toBe(true);
+    expect(input.useSitemaps).toBe(false);
+  });
+  it("rejects Cloudflare challenges and 403 errors as source evidence", () => {
+    expect(checkPage({ url: "https://resort.example", markdown: "Checking your browser. Cloudflare Ray ID: abc" })).toBe("challenge");
+    expect(checkPage({ url: "https://resort.example", crawl: { httpStatusCode: 403 }, text: "Forbidden" })).toBe("http_error");
   });
 });

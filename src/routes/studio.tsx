@@ -64,7 +64,7 @@ function Studio() {
     setBusy(true); setEditApproval(null);
     try {
       const facts = r.facts.filter((f) => section.factIds.includes(f.id))
-        .map((f) => ({ id: f.id, label: f.label, selected: f.selected, status: f.status }));
+        .map((f) => ({ id: f.id, label: f.label, ...(f.selected !== undefined ? { selected: f.selected } : {}), status: f.status }));
       const reply = await invokeAgent({
         kind: "editor", input: { section, instruction: instr, facts }, approveOverBudget,
       });

@@ -13,7 +13,7 @@ import {
   fetchScrapeRunItems,
   fetchScrapeRuns,
 } from "@/lib/api";
-import { baseProfile, makeFacts } from "@/lib/mock-data";
+import { blankFacts } from "@/lib/agents/agent-client";
 import { loadScrapePrefs, saveScrapePrefs } from "@/lib/scrape-prefs";
 import { mutateResort, useStudio } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -154,17 +154,13 @@ function Scrape() {
       mutateResort(r.id, (x) => {
         for (const s of x.sources) {
           const key = s.url.replace(/\/$/, "");
-          const hit =
-            startSet.has(key) ||
-            items.some((p) => {
-              try {
-                return new URL(p.url).hostname === new URL(s.url).hostname;
-              } catch {
-                return false;
-              }
-            });
+          const hit = startSet.has(key) || items.some((p) => {
+            const pUrl = p.url.replace(/\/$/, "");
+            return pUrl === key || pUrl.startsWith(key + "/");
+          });
           if (!hit) continue;
           s.scrape = "completed";
+          s.runId = run.id;
           s.extractedAt = new Date().toISOString().slice(0, 16).replace("T", " ");
           s.fieldsFound = items.filter((p) => {
             try {
@@ -249,22 +245,18 @@ function Scrape() {
   );
 
   const sendToResearch = () => {
-    for (const r of doneResorts) {
-      mutateResort(r.id, (x) => {
-        const overrides: Parameters<typeof makeFacts>[2] = {
-          capacity: { status: "missing" },
-          wellness: { status: "missing" },
-          price7: { status: "conflict", alt: "US$2,090" },
-          photos: { status: "needs_confirmation" },
-        };
-        x.facts = makeFacts(x, baseProfile(x), overrides);
+    for (const resort of doneResorts) {
+      mutateResort(resort.id, (x) => {
+        x.facts = blankFacts(x.id);
         x.stage = "research";
+        x.exclusivity.status = "needs_review";
         x.researchLog = [
-          `Imported crawl pages from bulk run${selected ? ` ${selected.id}` : ""}`,
+          `Apify crawl complete; raw evidence stored under run ${selected?.id ?? "linked sources"}.`,
+          "No facts have been verified yet. Run Claude Reviewer against the collected pages.",
         ];
       });
     }
-    toast.success(`${doneResorts.length} resorts sent to Research`);
+    toast.success(`${doneResorts.length} resorts sent to Research with no fabricated facts`);
     nav({ to: "/research", search: doneResorts[0] ? { resort: doneResorts[0].id } : {} });
   };
 

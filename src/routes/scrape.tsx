@@ -1,3 +1,4 @@
+import { checkPage } from "@/lib/crawl-policy";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Download, Play, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -159,7 +160,7 @@ function Scrape() {
             return pUrl === key || pUrl.startsWith(key + "/");
           });
           if (!hit) continue;
-          s.scrape = "completed";
+          s.scrape = items.some((p) => checkPage(p) === "usable" && (p.url.replace(/\/$/, "") === key || p.url.startsWith(key + "/"))) ? "completed" : "failed";
           s.runId = run.id;
           s.extractedAt = new Date().toISOString().slice(0, 16).replace("T", " ");
           s.fieldsFound = items.filter((p) => {

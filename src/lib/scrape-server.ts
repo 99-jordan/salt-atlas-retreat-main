@@ -41,7 +41,6 @@ export const startScrapeRun = createServerFn({ method: "POST" })
       input,
       startedAt: new Date().toISOString(),
       itemCount: 0,
-      r2Key: undefined,
       simulated: started.simulated,
       ...(started.datasetId ? { datasetId: started.datasetId } : {}),
     };

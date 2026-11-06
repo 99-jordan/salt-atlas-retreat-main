@@ -46,6 +46,7 @@ function canonical(raw: string): string {
 }
 type SearchHit = { title: string; url: string; snippet: string; kind: "web" | "places" };
 async function discoverEvidence(input: DiscoverInput): Promise<SearchHit[]> {
+  if (envValue("ENABLE_LIVE_AGENT_CALLS") !== "true") throw new Error("Claude agents are disabled. Protect the app before enabling live research.");
   const key = envValue("GOOGLE_SEARCH_API_KEY");
   const cx = envValue("GOOGLE_SEARCH_CX");
   const hits: SearchHit[] = [];
@@ -140,6 +141,7 @@ Schema: {"sectionId":"id","title":"...","body":"...","notes":"..."}.`,
 }
 
 async function callClaude(req: AgentRequest, hits: SearchHit[] = []): Promise<AgentResponse> {
+  if (envValue("ENABLE_LIVE_AGENT_CALLS") !== "true") throw new Error("Claude agents are disabled. Set ENABLE_LIVE_AGENT_CALLS=true only behind private access controls.");
   const key = envValue("ANTHROPIC_API_KEY");
   if (!key) throw new Error("ANTHROPIC_API_KEY is not configured on the server");
   const p = promptFor(req, hits);

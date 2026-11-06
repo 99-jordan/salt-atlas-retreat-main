@@ -81,7 +81,7 @@ export interface AgentUsage {
 }
 export type AgentResponse =
   | { state: "approval_required"; kind: AgentKind; estimatedCostGbp: number; budgetGbp: number; reason: string }
-  | { state: "completed"; kind: AgentKind; data: unknown; usage: AgentUsage; warnings: string[] };
+  | { state: "completed"; kind: AgentKind; data: string; usage: AgentUsage; warnings: string[] };
 
 export const SOURCE_RANK: Record<SourceType, number> = {
   official: 0, resort_owned: 1, salt_atlas: 2, independent: 3, competitor: 4,

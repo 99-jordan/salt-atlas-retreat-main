@@ -1,6 +1,6 @@
 import type { Candidate, Fact, Resort, SourceUrl, PageSection, Competitor } from "../types";
 import { slugify, FIELD_SPECS } from "../mock-data";
-import type { DiscoverInput } from "./contracts";
+import type { AgentRequest, DiscoverInput } from "./contracts";
 import { discoverySchema, reviewSchema, writerSchema, editSchema } from "./contracts";
 import { executeAgent } from "./agent-server";
 import type { WccPage } from "../wcc-types";
@@ -12,9 +12,7 @@ export class ApprovalRequired extends Error {
     super(`${kind} requires approval: estimated £${estimatedCostGbp.toFixed(3)} exceeds £0.10`);
   }
 }
-export async function invokeAgent(
-  req: Parameters<typeof executeAgent>[0] extends { data: infer T } ? T : never,
-) {
+export async function invokeAgent(req: AgentRequest) {
   const reply = await executeAgent({ data: req });
   if (reply.state === "approval_required") throw new ApprovalRequired(reply.estimatedCostGbp, reply.kind);
   return reply;

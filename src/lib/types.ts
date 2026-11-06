@@ -17,6 +17,7 @@ export interface SourceUrl {
   error?: string;
   extractedAt?: string;
   fieldsFound?: number;
+  runId?: string;
 }
 
 export interface Candidate {

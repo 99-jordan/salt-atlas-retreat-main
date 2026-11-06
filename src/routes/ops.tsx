@@ -1,3 +1,4 @@
+import { checkPage } from "@/lib/crawl-policy";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -77,7 +78,7 @@ function Operations() {
         if (!TERMINAL.has(finished.status)) throw new Error("Crawl is still running. Reopen Scrape to inspect the saved run.");
         if (finished.status !== "SUCCEEDED") throw new Error(`Apify ${finished.status}; see Runs for details.`);
         const pages = await fetchScrapeRunItems(finished.id);
-        const usable = pages.filter((p) => (p.markdown ?? p.text ?? "").trim().length >= 100 && (p.crawl?.httpStatusCode ?? 200) < 400);
+        const usable = pages.filter((p) => checkPage(p) === "usable");
         if (!usable.length) throw new Error("No usable content returned. Keep the resort queued and find another source.");
         mutateResort(current.id, (r) => {
           for (const src of r.sources) {

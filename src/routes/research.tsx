@@ -10,7 +10,7 @@ import { mutateResort, useStudio } from "@/lib/store";
 import { canGenerate, completeness } from "@/lib/workflow";
 import { newPage } from "@/lib/page-gen";
 import { fetchScrapeRunItems } from "@/lib/api";
-import { ApprovalRequired, invokeAgent, mergeVerifiedResearch } from "@/lib/agents/agent-client";
+import { ApprovalRequired, invokeAgent, mergeVerifiedResearch, applyWrittenSections } from "@/lib/agents/agent-client";
 import type { Category, ExclusivityStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +36,8 @@ function Research() {
   const [running, setRunning] = useState(false);
   const [edit, setEdit] = useState<Record<string, string>>({});
   const [costApproval, setCostApproval] = useState<number | null>(null);
+  const [writerApproval, setWriterApproval] = useState<number | null>(null);
+  const [generating, setGenerating] = useState(false);
   if (!r) return <div className="p-10"><PageHeader title="Research & Verify" crumbs={[{ label: "Research & Verify" }]} description="No resorts in research. Send scraped resorts here." /></div>;
 
   const gapResearch = async (approveOverBudget = false) => {
@@ -72,14 +74,41 @@ function Research() {
   const correct = (fid: string) => mutateResort(r.id, (x) => { const f = x.facts.find((y) => y.id === fid)!; const c = { id: `sa${Date.now()}`, value: edit[fid] ?? "", sourceUrl: "https://saltatlas.com/knowledge", sourceType: "salt_atlas" as const, checkedAt: "2026-11-06" }; f.candidates.push(c); f.selected = c.value; f.selectedCandidateId = c.id; f.status = "verified"; f.reason = "Salt Atlas knowledge added by editor."; });
   const accept = (fid: string) => mutateResort(r.id, (x) => { const f = x.facts.find((y) => y.id === fid)!; f.status = "verified"; f.reason = "Accepted by editor."; });
   const setExcl = (s: ExclusivityStatus) => mutateResort(r.id, (x) => { x.exclusivity.status = s; x.exclusivity.confirmedBy = "Editor"; });
-  const generate = () => { mutateResort(r.id, (x) => { x.stage = "generate"; x.page = newPage(x); }); toast.success("Page generated from verified research"); nav({ to: "/studio", search: { resort: r.id } }); };
+  const generate = async (approveOverBudget = false) => {
+    setGenerating(true); setWriterApproval(null);
+    try {
+      if (!canGenerate(r)) throw new Error("Resolve conflicts and the minimum verified research requirements first.");
+      const provisional = newPage(r);
+      const reply = await invokeAgent({
+        kind: "writer", input: { resort: r, sections: provisional.sections }, approveOverBudget,
+      });
+      mutateResort(r.id, (x) => {
+        x.page = newPage(x);
+        const changed = applyWrittenSections(x, reply.data);
+        x.page!.versions[0]!.sections = structuredClone(x.page!.sections);
+        x.stage = "generate";
+        x.researchLog.push(`Writer prepared ${changed.length} source-linked sections (Claude £${(reply.usage.actualCostGbp ?? 0).toFixed(3)}).`);
+        x.researchLog.push(...reply.warnings);
+      });
+      toast.success("Draft generated from verified research. Review every claim before publishing.");
+      nav({ to: "/studio", search: { resort: r.id } });
+    } catch (error) {
+      if (error instanceof ApprovalRequired) setWriterApproval(error.estimatedCostGbp);
+      else toast.error(error instanceof Error ? error.message : "HTML writer failed");
+    } finally { setGenerating(false); }
+  };
+
   const facts = r.facts.filter((f) => f.category === cat);
 
   return (
     <div className="mx-auto max-w-[1320px] px-5 py-8 md:px-10 md:py-10">
       <PageHeader eyebrow="Stage 03" title={r.name} crumbs={[{ label: "Scrape", to: "/scrape" }, { label: "Research & Verify" }]}
         description={<><span>{r.destination} · </span><Mono className="text-primary">{r.officialUrl}</Mono></>}
-        actions={<><Button variant="outline" onClick={() => void gapResearch()} disabled={running}><Sparkles className="size-4" />Research gaps</Button><Button onClick={generate} disabled={!canGenerate(r)}>Generate HTML <ArrowRight className="size-4" /></Button></>} />
+        actions={<><Button variant="outline" onClick={() => void gapResearch()} disabled={running}><Sparkles className="size-4" />Research gaps</Button><Button onClick={() => void generate()} disabled={!canGenerate(r) || generating}>{generating ? "Generating…" : "Generate HTML"} <ArrowRight className="size-4" /></Button></>} />
+      {writerApproval !== null && <Panel className="mb-4 flex items-center justify-between gap-3 p-3 text-sm">
+        <span>Writer estimate £{writerApproval.toFixed(3)} exceeds the £0.10 per-call approval threshold.</span>
+        <Button onClick={() => void generate(true)} disabled={generating}>Approve writer call</Button>
+      </Panel>}
       {costApproval !== null && <Panel className="mb-4 flex items-center justify-between gap-3 p-3 text-sm">
         <span>Reviewer estimate £{costApproval.toFixed(3)} exceeds the £0.10 per-call approval threshold.</span>
         <Button onClick={() => void gapResearch(true)} disabled={running}>Approve this call</Button>

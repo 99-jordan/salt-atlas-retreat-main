@@ -26,15 +26,6 @@ export const Route = createFileRoute("/discover")({
   component: Discover,
 });
 
-const STEPS = (region: string, n: number) => [
-  `Planning search across ${n} competitor domain${n > 1 ? "s" : ""}…`,
-  `Reading competitor index pages for ${region} (sitemaps first, no full crawl)`,
-  "Extracting resort names and listing URLs",
-  "Resolving official websites via search + domain ownership checks",
-  "Classifying sources: competitor · official · resort-owned · supporting",
-  "Checking identity evidence for similar names (domain, coordinates, phone)",
-  "Comparing against resorts already in Salt Atlas",
-];
 
 function Discover() {
   const { competitors, discoveryResults, resorts } = useStudio();
@@ -54,7 +45,7 @@ function Discover() {
     setRunning(true); setCostApproval(null); setLog(["Scout: finding candidate source URLs (no crawl)…"]);
     try {
       const input = {
-        country, region, instruction, optionalUrl: url.trim() || undefined,
+        country, region, instruction, ...(url.trim() ? { optionalUrl: url.trim() } : {}),
         competitors: activeCompetitors(competitors, comps), knownResortNames: resorts.map((r) => r.name),
       };
       const reply = await invokeAgent({ kind: "scout", input, approveOverBudget });

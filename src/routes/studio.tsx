@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Mono, PageHeader, Panel, Pill } from "@/components/studio/ui-bits";
 import { mutateResort, useStudio } from "@/lib/store";
 import { qualityChecks } from "@/lib/workflow";
-import { aiEditSection, sleep, type AiEditResponse } from "@/lib/api";
+import { sleep, type AiEditResponse } from "@/lib/api";
+import { ApprovalRequired, applyEditorPatch, invokeAgent } from "@/lib/agents/agent-client";
 import { stamp } from "@/lib/page-gen";
 import type { PageSection } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -40,6 +41,7 @@ function Studio() {
   const [instr, setInstr] = useState("Make this paragraph more engaging without changing the facts.");
   const [proposal, setProposal] = useState<AiEditResponse & { attempt: number }>();
   const [busy, setBusy] = useState(false);
+  const [editApproval, setEditApproval] = useState<number | null>(null);
   const [preview, setPreview] = useState(false);
   const [deploy, setDeploy] = useState<string>();
   if (!r?.page) return <div className="p-10"><PageHeader title="Generate, Edit & Publish" crumbs={[{ label: "Studio" }]} description="No pages yet. Generate one from Research & Verify." /></div>;
@@ -57,10 +59,25 @@ function Studio() {
   };
   const setField = (id: string, field: "title" | "body", v: string) => commit((ss) => { ss.find((s) => s.id === id)![field] = v; });
   const move = (i: number, d: number) => commit((ss) => { const [x] = ss.splice(i, 1); if (x) ss.splice(i + d, 0, x); });
-  const ask = async (attempt = 0) => {
-    if (!section) return; setBusy(true);
-    const res = await aiEditSection({ sectionId: section.id, instruction: instr, section, verifiedFacts: [] }, attempt);
-    setProposal({ ...res, attempt }); setBusy(false);
+  const ask = async (attempt = 0, approveOverBudget = false) => {
+    if (!section) return;
+    setBusy(true); setEditApproval(null);
+    try {
+      const facts = r.facts.filter((f) => section.factIds.includes(f.id))
+        .map((f) => ({ id: f.id, label: f.label, ...(f.selected !== undefined ? { selected: f.selected } : {}), status: f.status }));
+      const reply = await invokeAgent({
+        kind: "editor", input: { section, instruction: instr, facts }, approveOverBudget,
+      });
+      const patch = applyEditorPatch(section, reply.data);
+      setProposal({
+        patch, attempt, model: "light",
+        tokens: reply.usage.inputTokens + reply.usage.outputTokens,
+        notes: `Claude ${reply.usage.model}; cost £${(reply.usage.actualCostGbp ?? 0).toFixed(3)}. ${reply.warnings.join("; ")}`,
+      });
+    } catch (error) {
+      if (error instanceof ApprovalRequired) setEditApproval(error.estimatedCostGbp);
+      else toast.error(error instanceof Error ? error.message : "Claude edit failed");
+    } finally { setBusy(false); }
   };
   const save = () => { mutateResort(r.id, (x) => { const p = x.page!; p.versions.push({ id: `v${p.versions.length + 1}`, number: p.versions.length + 1, savedAt: stamp(), note: "Editor save", sections: structuredClone(p.sections) }); }); toast.success("New version saved"); };
   const checks = qualityChecks(r);
@@ -107,11 +124,14 @@ function Studio() {
               <Mono className="text-muted-foreground">Scope: {section.type} section only</Mono>
               <Textarea value={instr} onChange={(e) => setInstr(e.target.value)} rows={3} className="mt-2 text-sm" />
               <Button className="mt-2 w-full" onClick={() => ask()} disabled={busy}><Sparkles className="size-4" />{busy ? "Drafting patch…" : "Propose change"}</Button>
+              {editApproval !== null && <div className="mt-3 rounded-lg border border-amber-400/60 p-3 text-xs">
+                Estimated £{editApproval.toFixed(3)} exceeds £0.10. <Button size="sm" onClick={() => void ask(0, true)}>Approve this edit</Button>
+              </div>}
               {proposal && <div className="mt-3 space-y-2 text-xs">
                 <div className="rounded bg-destructive/10 p-2 line-through">{section.body}</div>
                 <div className="rounded bg-success/10 p-2">{proposal.patch.body}</div>
-                <Mono className="text-muted-foreground">{proposal.model === "skill" ? "HTML Editor Skill" : "Light model"} · ~{proposal.tokens} tokens (mock)</Mono>
-                <div className="flex gap-1"><Button size="sm" onClick={() => { setField(section.id, "body", proposal.patch.body); setProposal(undefined); }}>Accept</Button><Button size="sm" variant="outline" onClick={() => setProposal(undefined)}>Reject</Button><Button size="sm" variant="ghost" onClick={() => ask(proposal.attempt + 1)}>Regenerate</Button></div>
+                <Mono className="text-muted-foreground">Claude · {proposal.tokens} tokens · {proposal.notes}</Mono>
+                <div className="flex gap-1"><Button size="sm" onClick={() => { commit((ss) => { const target = ss.find((x) => x.id === section.id); if (target) { target.title = proposal.patch.title; target.body = proposal.patch.body; } }); setProposal(undefined); }}>Accept</Button><Button size="sm" variant="outline" onClick={() => setProposal(undefined)}>Reject</Button><Button size="sm" variant="ghost" onClick={() => ask(proposal.attempt + 1)}>Regenerate</Button></div>
               </div>}
             </>}
           </Panel>

@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ActivityLog, Mono, PageHeader, Panel, Pill, SourceTag } from "@/components/studio/ui-bits";
-import { DESTINATIONS, mockDiscovery } from "@/lib/mock-data";
+import { DESTINATIONS } from "@/lib/mock-data";
+import { ApprovalRequired, discoveredResorts, activeCompetitors, invokeAgent } from "@/lib/agents/agent-client";
 import { mutate, useStudio } from "@/lib/store";
-import { sleep } from "@/lib/api";
+
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/discover")({
@@ -25,15 +26,6 @@ export const Route = createFileRoute("/discover")({
   component: Discover,
 });
 
-const STEPS = (region: string, n: number) => [
-  `Planning search across ${n} competitor domain${n > 1 ? "s" : ""}…`,
-  `Reading competitor index pages for ${region} (sitemaps first, no full crawl)`,
-  "Extracting resort names and listing URLs",
-  "Resolving official websites via search + domain ownership checks",
-  "Classifying sources: competitor · official · resort-owned · supporting",
-  "Checking identity evidence for similar names (domain, coordinates, phone)",
-  "Comparing against resorts already in Salt Atlas",
-];
 
 function Discover() {
   const { competitors, discoveryResults, resorts } = useStudio();
@@ -47,16 +39,31 @@ function Discover() {
   const [running, setRunning] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [newComp, setNewComp] = useState("");
+  const [costApproval, setCostApproval] = useState<number | null>(null);
 
-  const run = async () => {
-    setRunning(true); setLog([]); setPicked(new Set());
-    for (const s of STEPS(region, comps.length)) { setLog((l) => [...l, s]); await sleep(550); }
-    const found = mockDiscovery(country, region, comps, resorts.map((r) => r.name));
-    if (url && found[0]) found[0].sources.unshift({ id: `${found[0].id}-u`, url, type: "competitor", selected: true, scrape: "pending" });
-    mutate((s) => { s.discoveryResults = found; });
-    setLog((l) => [...l, `Done — ${found.length} resorts, ${found.reduce((a, r) => a + r.sources.length, 0)} candidate URLs.`]);
-    setPicked(new Set(found.filter((r) => !r.knownBefore && !r.duplicateOf).map((r) => r.id)));
-    setRunning(false);
+  const run = async (approveOverBudget = false) => {
+    setRunning(true); setCostApproval(null); setLog(["Scout: finding candidate source URLs (no crawl)…"]);
+    try {
+      const input = {
+        country, region, instruction, ...(url.trim() ? { optionalUrl: url.trim() } : {}),
+        competitors: activeCompetitors(competitors, comps), knownResortNames: resorts.map((r) => r.name),
+      };
+      const reply = await invokeAgent({ kind: "scout", input, approveOverBudget });
+      const found = discoveredResorts(reply.data, input);
+      mutate((s) => { s.discoveryResults = found; });
+      setPicked(new Set(found.filter((r) => !r.knownBefore).map((r) => r.id)));
+      setLog((l) => [...l, `Scout returned ${found.length} resort candidates; review identity and sources before crawling.`,
+        `Claude cost estimated £${reply.usage.estimatedCostGbp.toFixed(3)}; actual £${(reply.usage.actualCostGbp ?? 0).toFixed(3)}.`,
+        ...reply.warnings]);
+    } catch (error) {
+      if (error instanceof ApprovalRequired) {
+        setCostApproval(error.estimatedCostGbp);
+        setLog((l) => [...l, error.message]);
+      } else {
+        setLog((l) => [...l, `Discovery failed: ${error instanceof Error ? error.message : String(error)}`]);
+        toast.error("Scout discovery failed — see activity log");
+      }
+    } finally { setRunning(false); }
   };
 
   const toggleSource = (rid: string, sid: string) => mutate((s) => {
@@ -129,9 +136,13 @@ function Discover() {
             <Field label="Specific competitor URL (optional)">
               <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" className="font-mono text-xs" />
             </Field>
-            <Button className="w-full" onClick={run} disabled={running || !comps.length}>
+            <Button className="w-full" onClick={() => void run()} disabled={running || !comps.length}>
               <Sparkles className="size-4" /> {running ? "Researching…" : "Start discovery"}
             </Button>
+            {costApproval !== null && <div className="rounded-lg border border-amber-400/60 bg-amber-50 p-3 text-xs text-amber-950">
+              <p>Estimated Claude cost £{costApproval.toFixed(3)}, above £0.10 per-call limit.</p>
+              <Button size="sm" variant="outline" className="mt-2" onClick={() => void run(true)} disabled={running}>Approve this call</Button>
+            </div>}
             {log.length > 0 && <div className="rounded-lg bg-muted/60 p-3"><ActivityLog lines={log} running={running} /></div>}
           </div>
         </Panel>

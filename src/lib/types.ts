@@ -17,6 +17,7 @@ export interface SourceUrl {
   error?: string;
   extractedAt?: string;
   fieldsFound?: number;
+  runId?: string;
 }
 
 export interface Candidate {
@@ -26,6 +27,7 @@ export interface Candidate {
   sourceType: SourceType;
   checkedAt: string;
   rejected?: boolean;
+  quote?: string;
 }
 
 export type Category =

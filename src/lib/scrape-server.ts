@@ -8,6 +8,7 @@ import {
 } from "./apify";
 import { getScrapeStorage, r2DatasetKey, scrapeStorageMode } from "./scrape-storage";
 import type { ScrapeRunRecord, WccInput, WccPage } from "./wcc-types";
+import { constrainCrawl } from "./crawl-policy";
 
 function newId(): string {
   return `run_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -32,22 +33,22 @@ export const startScrapeRun = createServerFn({ method: "POST" })
     return data;
   })
   .handler(async ({ data: input }) => {
+    const safeInput = constrainCrawl(input);
     const storage = getScrapeStorage();
-    const started = await startWebsiteContentCrawl(input);
+    const started = await startWebsiteContentCrawl(safeInput);
     const record: ScrapeRunRecord = {
       id: newId(),
       apifyRunId: started.apifyRunId,
       status: started.status,
-      input,
+      input: safeInput,
       startedAt: new Date().toISOString(),
       itemCount: 0,
-      r2Key: undefined,
       simulated: started.simulated,
       ...(started.datasetId ? { datasetId: started.datasetId } : {}),
     };
 
     if (started.simulated) {
-      const pages = mockPagesForInput(input);
+      const pages = mockPagesForInput(safeInput);
       record.status = "SUCCEEDED";
       record.finishedAt = new Date().toISOString();
       record.itemCount = pages.length;

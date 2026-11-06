@@ -1,0 +1,5 @@
+# Copied to .dev.vars for `vite dev` under the Cloudflare Vite plugin.
+# Wrangler loads these as process.env / Worker secrets locally.
+APIFY_TOKEN=
+APIFY_ACTOR_ID=apify/website-content-crawler
+APIFY_ACTOR_BUILD=version-0

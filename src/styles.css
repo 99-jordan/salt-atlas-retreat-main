@@ -1,0 +1,155 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-sky: var(--sky);
+  --color-ocean: var(--ocean);
+  --color-navy: var(--navy);
+  --color-deep: var(--deep);
+  --color-mist: var(--mist);
+  --color-shell: var(--shell);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.625rem;
+  /* Salt Atlas brand palette */
+  --deep: oklch(0.18 0.03 245);      /* #081521 */
+  --navy: oklch(0.24 0.04 243);      /* #0E2233 */
+  --ocean: oklch(0.35 0.07 240);     /* #123E5C */
+  --cobalt: oklch(0.5 0.2 262);      /* #1554D1 */
+  --sky: oklch(0.73 0.11 262);       /* #7FA8F2 */
+  --shell: oklch(0.97 0.003 220);    /* #F4F6F7 */
+  --mist: oklch(0.91 0.008 220);     /* #DEE3E5 */
+  --slate: oklch(0.47 0.02 245);     /* #56616B */
+
+  --background: var(--shell);
+  --foreground: var(--deep);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--deep);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--deep);
+  --primary: var(--cobalt);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: var(--mist);
+  --secondary-foreground: var(--navy);
+  --muted: oklch(0.94 0.006 220);
+  --muted-foreground: var(--slate);
+  --accent: oklch(0.93 0.03 262);
+  --accent-foreground: var(--ocean);
+  --destructive: oklch(0.55 0.16 35);  /* #C2402A */
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.58 0.11 175);
+  --warning: oklch(0.7 0.13 70);
+  --border: var(--mist);
+  --input: var(--mist);
+  --ring: var(--sky);
+  --chart-1: var(--cobalt);
+  --chart-2: var(--sky);
+  --chart-3: var(--ocean);
+  --chart-4: var(--success);
+  --chart-5: var(--warning);
+  --sidebar: var(--deep);
+  --sidebar-foreground: oklch(0.86 0.01 230);
+  --sidebar-primary: var(--sky);
+  --sidebar-primary-foreground: var(--deep);
+  --sidebar-accent: var(--navy);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: var(--sky);
+  --shadow-soft: 0 1px 2px oklch(0.18 0.03 245 / 4%), 0 8px 24px -12px oklch(0.18 0.03 245 / 12%);
+  --gradient-ocean: linear-gradient(135deg, var(--navy), var(--ocean));
+}
+
+.dark {
+  --background: oklch(0.16 0.025 245);
+  --foreground: oklch(0.95 0.005 220);
+  --card: var(--deep);
+  --card-foreground: oklch(0.95 0.005 220);
+  --popover: var(--navy);
+  --popover-foreground: oklch(0.95 0.005 220);
+  --primary: oklch(0.62 0.17 262);
+  --secondary: var(--navy);
+  --secondary-foreground: oklch(0.95 0.005 220);
+  --muted: var(--navy);
+  --muted-foreground: oklch(0.7 0.02 230);
+  --accent: var(--ocean);
+  --accent-foreground: oklch(0.95 0.005 220);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 12%);
+  --sidebar: oklch(0.13 0.025 245);
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "ss01";
+  }
+}
+
+@utility shadow-soft { box-shadow: var(--shadow-soft); }
+@utility bg-ocean-gradient { background-image: var(--gradient-ocean); }
+@utility eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+@keyframes shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
+@utility progress-shimmer {
+  background-image: linear-gradient(90deg, transparent, oklch(1 0 0 / 35%), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+[contenteditable="true"]:focus { outline: 2px solid var(--sky); outline-offset: 3px; border-radius: 3px; }

@@ -15,7 +15,7 @@ export class ApprovalRequired extends Error {
 export async function invokeAgent(req: AgentRequest) {
   const reply = await executeAgent({ data: req });
   if (reply.state === "approval_required") throw new ApprovalRequired(reply.estimatedCostGbp, reply.kind);
-  return reply;
+  return { ...reply, data: JSON.parse(reply.data) as unknown };
 }
 const canonical = (s: string) => { try { const u = new URL(s); u.hash = ""; u.search = ""; return u.toString().replace(/\/$/, ""); } catch { return s; } };
 
@@ -83,7 +83,7 @@ export function mergeVerifiedResearch(resort: Resort, raw: unknown, pages: WccPa
     const active = f.candidates.filter((c) => !c.rejected);
     const distinct = new Set(active.map((c) => c.value.trim().toLowerCase()));
     if (distinct.size > 1) {
-      f.status = "conflict"; f.selected = undefined; f.selectedCandidateId = undefined;
+      f.status = "conflict"; delete f.selected; delete f.selectedCandidateId;
       f.reason = "Multiple incompatible source values need review.";
     } else {
       const winner = [...active].sort((a, b) => SOURCE_RANK[a.sourceType] - SOURCE_RANK[b.sourceType])[0];
@@ -96,13 +96,14 @@ export function mergeVerifiedResearch(resort: Resort, raw: unknown, pages: WccPa
     applied.push(f.id);
   }
   const ex = response.exclusivity;
+  const exUrl = ex.sourceUrl;
   // A model cannot clear exclusivity by itself. A human checks the decision.
   resort.exclusivity = {
     status: ex.status === "blocked" ? "needs_review" : ex.status === "clear" ? "needs_review" : ex.status,
     evidence: [...resort.exclusivity.evidence, {
       note: `AI recommendation (${ex.status}): ${ex.reasoning}`,
       ...(ex.sourceUrl ? { url: ex.sourceUrl } : {}),
-      sourceType: ex.sourceUrl ? resort.sources.find((s) => canonical(s.url) === canonical(ex.sourceUrl))?.type ?? "independent" : "independent",
+      sourceType: exUrl ? resort.sources.find((s) => canonical(s.url) === canonical(exUrl))?.type ?? "independent" : "independent",
     }],
   };
   resort.researchLog.push(`Reviewer processed ${applied.length} evidenced facts; ${response.additionalSourceUrls.length} suggested follow-up sources.`);

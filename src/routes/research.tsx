@@ -1,3 +1,4 @@
+import { checkPage } from "@/lib/crawl-policy";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Sparkles, Check, X, ArrowRight } from "lucide-react";
 import { useState } from "react";
@@ -47,7 +48,7 @@ function Research() {
       if (!runs.length) throw new Error("No linked Apify run. Scrape source URLs first, then return to Research.");
       const all = (await Promise.all(runs.map((id) => fetchScrapeRunItems(id)))).flat();
       const sources = r.sources.map((s) => s.url.replace(/\/$/, ""));
-      const pages = all.filter((p) => sources.some((u) =>
+      const pages = all.filter((p) => checkPage(p) === "usable" && sources.some((u) =>
         p.url.replace(/\/$/, "") === u || p.url.startsWith(u + "/")));
       if (!pages.length) throw new Error("No usable scraped pages match this resort's planned sources.");
       const reply = await invokeAgent({ kind: "reviewer", input: { resort: r, pages }, approveOverBudget });

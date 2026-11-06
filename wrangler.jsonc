@@ -3,24 +3,24 @@
   "name": "salt-atlas-retreat",
   "compatibility_date": "2026-11-06",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "@tanstack/react-start/server-entry",
+  "main": "./src/worker.ts",
+  "triggers": {
+    "crons": ["0 6 * * *", "*/15 * * * *"]
+  },
   "observability": {
     "enabled": true
   },
-  // Create with: bunx wrangler r2 bucket create salt-atlas-scrape
   "r2_buckets": [
     {
       "binding": "SCRAPE_BUCKET",
       "bucket_name": "salt-atlas-scrape"
     }
   ],
-  // Create with: bunx wrangler d1 create salt-atlas-scrape
-  // Then replace database_id with the id wrangler prints.
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "salt-atlas-scrape",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "6f0007ea-1ac1-4ceb-ae3d-24b204fbca2a",
       "migrations_dir": "drizzle"
     }
   ]

@@ -26,73 +26,78 @@ export const listScrapeRuns = createServerFn({ method: "GET" }).handler(async ()
   return getScrapeStorage().listRuns();
 });
 
+export async function createScrapeRunRecord(input: WccInput): Promise<ScrapeRunRecord> {
+  const storage = getScrapeStorage();
+  const started = await startWebsiteContentCrawl(input);
+  const record: ScrapeRunRecord = {
+    id: newId(),
+    apifyRunId: started.apifyRunId,
+    status: started.status,
+    input,
+    startedAt: new Date().toISOString(),
+    itemCount: 0,
+    simulated: started.simulated,
+    ...(started.datasetId ? { datasetId: started.datasetId } : {}),
+  };
+
+  if (started.simulated) {
+    const pages = mockPagesForInput(input);
+    record.status = "SUCCEEDED";
+    record.finishedAt = new Date().toISOString();
+    record.itemCount = pages.length;
+    record.r2Key = r2DatasetKey(record.id);
+    await storage.saveRun(record);
+    await storage.savePages(record.id, pages);
+    return record;
+  }
+
+  await storage.saveRun(record);
+  return record;
+}
+
+/** Pull Apify status. On success, persist dataset pages to R2 + D1. */
+export async function syncScrapeRun(id: string): Promise<ScrapeRunRecord> {
+  const storage = getScrapeStorage();
+  const run = await storage.getRun(id);
+  if (!run) throw new Error("Run not found");
+
+  if (TERMINAL.has(run.status) || run.simulated) return run;
+
+  const live = await getApifyRun(run.apifyRunId);
+  const patch: Partial<ScrapeRunRecord> = {
+    status: live.status,
+    ...(live.datasetId ? { datasetId: live.datasetId } : {}),
+    ...(live.finishedAt ? { finishedAt: live.finishedAt } : {}),
+    ...(live.statusMessage ? { errorMessage: live.statusMessage } : {}),
+  };
+
+  if (live.status === "SUCCEEDED" && (live.datasetId || run.datasetId)) {
+    const datasetId = live.datasetId ?? run.datasetId!;
+    const pages = await listDatasetItems(datasetId);
+    await storage.savePages(run.id, pages);
+    patch.itemCount = pages.length;
+    patch.r2Key = r2DatasetKey(run.id);
+    patch.datasetId = datasetId;
+    if (!patch.finishedAt) patch.finishedAt = new Date().toISOString();
+  }
+
+  if (live.status === "FAILED" || live.status === "TIMED-OUT" || live.status === "ABORTED") {
+    if (!patch.finishedAt) patch.finishedAt = new Date().toISOString();
+  }
+
+  return (await storage.updateRun(run.id, patch)) ?? run;
+}
+
 export const startScrapeRun = createServerFn({ method: "POST" })
   .validator((data: WccInput) => {
     if (!data?.startUrls?.length) throw new Error("At least one start URL is required");
     return data;
   })
-  .handler(async ({ data: input }) => {
-    const storage = getScrapeStorage();
-    const started = await startWebsiteContentCrawl(input);
-    const record: ScrapeRunRecord = {
-      id: newId(),
-      apifyRunId: started.apifyRunId,
-      status: started.status,
-      input,
-      startedAt: new Date().toISOString(),
-      itemCount: 0,
-      simulated: started.simulated,
-      ...(started.datasetId ? { datasetId: started.datasetId } : {}),
-    };
-
-    if (started.simulated) {
-      const pages = mockPagesForInput(input);
-      record.status = "SUCCEEDED";
-      record.finishedAt = new Date().toISOString();
-      record.itemCount = pages.length;
-      record.r2Key = r2DatasetKey(record.id);
-      await storage.saveRun(record);
-      await storage.savePages(record.id, pages);
-      return record;
-    }
-
-    await storage.saveRun(record);
-    return record;
-  });
+  .handler(async ({ data: input }) => createScrapeRunRecord(input));
 
 export const getScrapeRun = createServerFn({ method: "GET" })
   .validator((data: { id: string }) => data)
-  .handler(async ({ data }) => {
-    const storage = getScrapeStorage();
-    const run = await storage.getRun(data.id);
-    if (!run) throw new Error("Run not found");
-
-    if (TERMINAL.has(run.status) || run.simulated) return run;
-
-    const live = await getApifyRun(run.apifyRunId);
-    const patch: Partial<ScrapeRunRecord> = {
-      status: live.status,
-      ...(live.datasetId ? { datasetId: live.datasetId } : {}),
-      ...(live.finishedAt ? { finishedAt: live.finishedAt } : {}),
-      ...(live.statusMessage ? { errorMessage: live.statusMessage } : {}),
-    };
-
-    if (live.status === "SUCCEEDED" && (live.datasetId || run.datasetId)) {
-      const datasetId = live.datasetId ?? run.datasetId!;
-      const pages = await listDatasetItems(datasetId);
-      await storage.savePages(run.id, pages);
-      patch.itemCount = pages.length;
-      patch.r2Key = r2DatasetKey(run.id);
-      patch.datasetId = datasetId;
-      if (!patch.finishedAt) patch.finishedAt = new Date().toISOString();
-    }
-
-    if (live.status === "FAILED" || live.status === "TIMED-OUT" || live.status === "ABORTED") {
-      if (!patch.finishedAt) patch.finishedAt = new Date().toISOString();
-    }
-
-    return (await storage.updateRun(run.id, patch)) ?? run;
-  });
+  .handler(async ({ data }) => syncScrapeRun(data.id));
 
 export const getScrapeRunItems = createServerFn({ method: "GET" })
   .validator((data: { id: string }) => data)

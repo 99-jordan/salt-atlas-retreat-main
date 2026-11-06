@@ -1,19 +1,26 @@
-# Copied to .dev.vars for `vite dev` under the Cloudflare Vite plugin.
+# Copied to `.dev.vars` for `vite dev` under the Cloudflare Vite plugin.
 # Wrangler loads these as process.env / Worker secrets locally.
 APIFY_TOKEN=
 APIFY_ACTOR_ID=apify/website-content-crawler
 APIFY_ACTOR_BUILD=version-0
 
-# Server-only research agents. Do not commit live values.
+# Server-only research agents (CEO · /ops). Do not commit live values.
 # Protect public access with Cloudflare Access before setting true.
 ENABLE_LIVE_AGENT_CALLS=false
+
+# Shared Anthropic key: used by agent-server and by Claude Pipeline (/pipeline).
 ANTHROPIC_API_KEY=
 ANTHROPIC_MODEL=claude-haiku-5-5
+
+# Google (optional, for Scout source lookup when wired)
 GOOGLE_SEARCH_API_KEY=
 GOOGLE_SEARCH_CX=
 GOOGLE_PLACES_API_KEY=
 
-# Adjust if the Claude model/pricing tier changes. Costs are estimated.
+# Agent cost estimates (CEO flow). Adjust if pricing changes.
 CLAUDE_INPUT_USD_PER_M=0.10
 CLAUDE_OUTPUT_USD_PER_M=0.50
 USD_PER_GBP=1.30
+
+# Pipeline-only: daily GBP cap for orchestration LLM calls.
+PIPELINE_DAILY_BUDGET_GBP=0.10

@@ -17,6 +17,7 @@ export default defineConfig({
     tailwindcss(),
     tanstackStart({
       srcDirectory: "src",
+      server: { entry: "src/worker.ts" },
     }),
     viteReact(),
   ],

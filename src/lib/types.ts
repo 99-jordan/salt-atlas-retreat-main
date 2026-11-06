@@ -26,6 +26,7 @@ export interface Candidate {
   sourceType: SourceType;
   checkedAt: string;
   rejected?: boolean;
+  quote?: string;
 }
 
 export type Category =

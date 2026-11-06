@@ -244,7 +244,7 @@ async function callClaude(req: AgentRequest, hits: SearchHit[] = []): Promise<Ag
     estimatedCostGbp: estimate,
     actualCostGbp: cost(result.usage?.input_tokens ?? 0, result.usage?.output_tokens ?? 0),
   };
-  return { state: "completed", kind: req.kind, data, usage, warnings };
+  return { state: "completed", kind: req.kind, data: JSON.stringify(data), usage, warnings };
 }
 
 const requestValidator = z.object({

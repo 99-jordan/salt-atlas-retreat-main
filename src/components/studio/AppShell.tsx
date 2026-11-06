@@ -1,11 +1,12 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Compass, Download, LayoutGrid, Moon, PenTool, ScanSearch, Sun, Menu } from "lucide-react";
+import { Compass, Download, LayoutGrid, Moon, PenTool, ScanSearch, Sun, Menu, BrainCircuit } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { useStudio } from "@/lib/store";
 
 const NAV = [
   { to: "/", label: "Overview", icon: LayoutGrid, n: "" , stage: null },
+  { to: "/ops", label: "CEO · Agent operations", icon: BrainCircuit, n: "", stage: null },
   { to: "/discover", label: "Discover", icon: Compass, n: "01", stage: "discover" },
   { to: "/scrape", label: "Scrape", icon: Download, n: "02", stage: "scrape" },
   { to: "/research", label: "Research & Verify", icon: ScanSearch, n: "03", stage: "research" },
@@ -59,7 +60,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {nav}
         <div className="mx-3 mt-4 space-y-3 rounded-lg border border-sidebar-border p-3 text-[11.5px] leading-relaxed text-sidebar-foreground/60">
           <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-sidebar-primary"><span className="size-1.5 animate-pulse rounded-full bg-sidebar-primary" />Demo mode</div>
-          Scrape uses Apify Website Content Crawler when APIFY_TOKEN is set; otherwise runs are simulated. Claude and publishing stay mocked.
+          Scrape uses Apify Website Content Crawler when APIFY_TOKEN is set; otherwise runs are simulated. Claude uses server-side API keys when configured; publishing stays simulated.
         </div>
         <button onClick={toggle} className="mx-6 mt-4 flex items-center gap-2 text-xs text-sidebar-foreground/60 hover:text-sidebar-accent-foreground">
           {dark ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />} {dark ? "Light" : "Dark"} mode

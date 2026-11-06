@@ -73,7 +73,9 @@ export function mergeVerifiedResearch(resort: Resort, raw: unknown, pages: WccPa
     if (!f || !haystack?.includes(item.sourceQuote.toLowerCase())) continue;
     const candidate: Candidate = {
       id: `ai-${crypto.randomUUID()}`, value: item.value, sourceUrl: item.sourceUrl,
-      sourceType: resort.sources.find((s) => canonical(s.url) === canonical(item.sourceUrl))?.type ?? "independent",
+      sourceType: resort.sources.filter((s) => canonical(item.sourceUrl) === canonical(s.url) ||
+        canonical(item.sourceUrl).startsWith(canonical(s.url) + "/"))
+        .sort((a, b) => SOURCE_RANK[a.type] - SOURCE_RANK[b.type])[0]?.type ?? "independent",
       checkedAt: now, quote: item.sourceQuote,
     };
     if (f.candidates.some((c) => c.value === candidate.value && canonical(c.sourceUrl) === canonical(candidate.sourceUrl))) continue;

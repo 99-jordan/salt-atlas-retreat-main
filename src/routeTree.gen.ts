@@ -14,6 +14,7 @@ import { Route as DiscoverRouteImport } from './routes/discover'
 import { Route as ResearchRouteImport } from './routes/research'
 import { Route as ScrapeRouteImport } from './routes/scrape'
 import { Route as StudioRouteImport } from './routes/studio'
+import { Route as OpsRouteImport } from './routes/ops'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -35,6 +36,11 @@ const ScrapeRoute = ScrapeRouteImport.update({
   path: '/scrape',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OpsRoute = OpsRouteImport.update({
+  id: '/ops',
+  path: '/ops',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StudioRoute = StudioRouteImport.update({
   id: '/studio',
   path: '/studio',
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/research': typeof ResearchRoute
   '/scrape': typeof ScrapeRoute
   '/studio': typeof StudioRoute
+  '/ops': typeof OpsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/research': typeof ResearchRoute
   '/scrape': typeof ScrapeRoute
   '/studio': typeof StudioRoute
+  '/ops': typeof OpsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +70,14 @@ export interface FileRoutesById {
   '/research': typeof ResearchRoute
   '/scrape': typeof ScrapeRoute
   '/studio': typeof StudioRoute
+  '/ops': typeof OpsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/discover' | '/research' | '/scrape' | '/studio'
+  fullPaths: '/' | '/discover' | '/research' | '/scrape' | '/studio' | '/ops'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/discover' | '/research' | '/scrape' | '/studio'
-  id: '__root__' | '/' | '/discover' | '/research' | '/scrape' | '/studio'
+  to: '/' | '/discover' | '/research' | '/scrape' | '/studio' | '/ops'
+  id: '__root__' | '/' | '/discover' | '/research' | '/scrape' | '/studio' | '/ops'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +86,7 @@ export interface RootRouteChildren {
   ResearchRoute: typeof ResearchRoute
   ScrapeRoute: typeof ScrapeRoute
   StudioRoute: typeof StudioRoute
+  OpsRoute: typeof OpsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -109,6 +119,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ScrapeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ops': {
+      id: '/ops'
+      path: '/ops'
+      fullPath: '/ops'
+      preLoaderRoute: typeof OpsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/studio': {
       id: '/studio'
       path: '/studio'
@@ -125,6 +142,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResearchRoute: ResearchRoute,
   ScrapeRoute: ScrapeRoute,
   StudioRoute: StudioRoute,
+  OpsRoute: OpsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
